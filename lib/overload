@@ -1,2 +1,72 @@
 ##
 # Overload allows for all kinds of sneakiness.
+
+## Trickery for determining whether this is being sourced.
+if [[ ${0##*/} == 'bash' ]]; then
+	if [ $# -gt 0 ]; then
+		while [ $# -gt 0 ]; do
+			eval "$1() { $HOME/.overshell/lib/overload $1 \"\$@\"; }"
+			shift
+		done
+	fi
+	return 0
+fi
+
+##Store original command for pass through.
+pass_through="$@"
+
+underscorize() {
+	underscorize="$*"
+	echo "${underscorize// /_}"
+}
+
+findOriginal() {
+	find_original="$(which -a $1 | grep -v "$0" | head -n 1)"
+	echo $find_original
+}
+
+main() {
+	command="$0"
+	command="${command##*/}"
+
+	## If calling overload directly, use the first arg as the command instead.
+	if [[ $command == 'overload' ]]; then
+		command="${1##*/}"
+		shift
+	fi
+	
+	## defining this so it can be used by plugins.
+	original_command=$(findOriginal $command)
+
+	## Load configuration settings.
+	if [ -e $HOME/.overshell/config ]; then
+		source $HOME/.overshell/config
+	fi
+
+	## Load plugins.
+	for file in $(find $HOME/.overshell/plugins/* -maxdepth 0 -type f); do
+		source $file
+	done
+
+	found_match=0
+	index=$#
+
+	while [ $index -ge 0 ]; do
+		function_name=$(underscorize $command "${@:1:$index}")
+
+		if [[ "$(type -t $function_name)" == "function" ]]; then
+			found_match=1
+			break
+		fi
+
+		index=$(($index-1))
+	done
+
+	if [ $found_match -gt 0 ]; then
+		$function_name "${@:$index+1}"
+	else
+		$pass_through
+	fi
+}
+
+main "$@"

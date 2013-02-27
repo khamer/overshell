@@ -1,5 +1,3 @@
-OVERSHELL_DIR="$HOME/Workbench/overshell"
-
 ## This snippet prevents overshell from doing anything when not running interactively.
 case $- in
 	*i*) ;;
@@ -25,5 +23,11 @@ shopt -s globstar
 ## Add the current directory to the path.
 export PATH=$PATH:.
 
-## Run overload.
-source $OVERSHELL_DIR/lib/overload
+## Load overload.
+plugins="$(find $HOME/.overshell/plugins/* -type f -name '*.*.sh')"
+for plugin in $plugins; do
+	command="${plugin%%.sh}"
+	command="${command##*.}"
+	echo "Loading $plugin for $command..."
+	source $HOME/.overshell/lib/overload $command
+done
