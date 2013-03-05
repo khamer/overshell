@@ -46,15 +46,16 @@ svn_help() {
 	if [ -z "$1" ]; then
 		$original_command help
 		echo "The following commands have been overloaded:"
-		echo " * svn add"
-		echo " * svn commit"
-		echo " * svn commit-ticket"
-		echo " * svn del"
-		echo " * svn help"
-		echo " * svn push"
-		echo " * svn revert"
-		echo " * svn upstatus"
-		echo " * svn shortlog"
+		echo "   add"
+		echo "   commit"
+		echo "   commit-ticket (ct)"
+		echo "   del"
+		echo "   help"
+		echo "   push"
+		echo "   revert"
+		echo "   upstatus (us)"
+		echo "   shortlog (sl)"
+		echo "   who"
 	else
 		$original_command help "$@"
 	fi
