@@ -23,11 +23,10 @@ shopt -s globstar
 ## Add the current directory to the path.
 export PATH=$PATH:.
 
-## Load overload.
-plugins="$(find $HOME/.overshell/plugins/* -type f -name '*.*.sh')"
-for plugin in $plugins; do
-	command="${plugin%%.sh}"
-	command="${command##*.}"
-	echo "Loading $plugin for $command..."
+## Initialize packages providing commands.
+for filename in $(find $HOME/.overshell/packages -maxdepth 2 -iname 'overload.*.sh'); do
+	command="${filename%%.sh}"
+	command="${command##*overload.}"
+	echo "Loading $filename for $command..."
 	source $HOME/.overshell/lib/overload $command
 done

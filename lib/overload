@@ -1,4 +1,4 @@
-##
+## vim: set filetype=sh:
 # Overload allows for all kinds of sneakiness.
 
 ## Trickery for determining whether this is being sourced.
@@ -43,9 +43,9 @@ main() {
 		source $HOME/.overshell/config
 	fi
 
-	## Load plugins.
-	for file in $(find $HOME/.overshell/plugins/* -maxdepth 0 -type f); do
-		source $file
+	## Load packages.
+	for filename in $(find $HOME/.overshell/packages .maxdepth 2 -iname 'overload.*.sh'); do
+		source $filename
 	done
 
 	found_match=0
