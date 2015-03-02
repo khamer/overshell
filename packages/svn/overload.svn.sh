@@ -2,7 +2,7 @@ svn_add() {
 	if [ -z "$1" ]; then
 		ARGS=$(svn st | awk '/^\?/{print $2}' | xargs)
 		if [ -n "$ARGS" ]; then
-			$original_command add $ARGS
+			svn st | awk '/^\?/{print $2}' | xargs -d'\n' $original_command add
 		fi
 	else
 		$original_command add "$@"
@@ -25,7 +25,7 @@ svn_commit-ticket() {
 
 	$original_command up
 	if [[ $# > 0 ]]; then
-		$original_command ci -m "For Ticket #$ticket_number: $*"
+		$original_command ci -m "Completed Ticket #$ticket_number: $*"
 	else
 		$original_command ci -m "Completed Ticket #$ticket_number"
 	fi
@@ -35,11 +35,15 @@ svn_del() {
 	if [ -z "$1" ]; then
 		ARGS=$(svn st | awk '/^\!/{print $2}' | xargs)
 		if [ -n "$ARGS" ]; then
-			$original_command del $ARGS
+			svn st | awk '/^\!/{print $2}' | xargs -d'\n' $original_command del
 		fi
 	else
 		$original_command del "$@"
 	fi
+}
+
+svn_df() {
+	$original_command diff "$@" | grep -E '^[-+]'
 }
 
 svn_help() {
@@ -62,16 +66,20 @@ svn_help() {
 }
 
 svn_push() {
-	for f in $(svn st | awk '/^[AM]/{print $2}'); do
-		upload $f
-	done
+	parallel upload ::: $(svn st| awk '/^[AM]/{print $2}')
+}
+
+svn_reset() {
+	files="$(svn st | awk '/^[AM!D]/{print $2}')"
+	parallel svn revert ::: $files
+	parallel upload ::: $files
 }
 
 svn_revert() {
 	if [ -z "$1" ]; then
 		ARGS=$(svn st | awk '/^M/{print $2}' | xargs)
 		if [ -n "$ARGS" ]; then
-			$original_command revert $ARGS
+			svn st | awk '/^M/{print $2}' | xargs -d'\n' $original_command revert
 		fi
 	else
 		$original_command revert "$@"
@@ -94,7 +102,7 @@ svn_sl() {
 	svn_shortlog "$@"
 }
 svn_shortlog() {
-	$original_command log "$@" | grep [^-] | sed -e 'N;s/\n/ /'
+	$original_command log "$@" | grep '[^-]' | sed -e 'N;s/\n/ /'
 }
 
 svn_us() {
@@ -111,4 +119,29 @@ svn_who() {
 		file="."
 	fi
 	$original_command log -q $file | awk '/^r/{print $3}' | sort | uniq -c | sort -rn
+}
+
+svn_branch() {
+	if [ -n "$1" ]; then
+		if [ "$1" == "trunk" ]; then
+			svn switch ^/trunk
+		else
+			if ! svn ls ^/branches/$1 > /dev/null 2>/dev/null; then
+				svn cp ^/trunk ^/branches/$1
+			fi
+			svn switch ^/branches/$1
+		fi
+	else
+		BRANCHES="trunk/ $(svn ls ^/branches)"
+		CURRENT="$(svn info | awk '/^Relative URL:/{print $3}')"
+		CURRENT="${CURRENT#*/}/"
+		CURRENT="${CURRENT#branches/}"
+		for BRANCH in $BRANCHES; do
+			if [ $BRANCH == $CURRENT ]; then
+				echo "* $BRANCH"
+			else
+				echo "  $BRANCH"
+			fi
+		done
+	fi
 }

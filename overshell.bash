@@ -23,4 +23,9 @@ shopt -s globstar
 ## Add the current directory to the path.
 export PATH=$PATH:.
 
-source $HOME/.overshell/lib/overshell
+## Load packages implementing overload.
+for filename in $(find $HOME/.overshell/packages -maxdepth 2 -iname 'overload.*.sh'); do
+	command="${filename%%.sh}"
+	command="${command##*overload.}"
+	source $HOME/.overshell/lib/overload $command
+done
